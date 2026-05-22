@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Plan Calculator</title>
+<!-- PWA / Home Screen Icon -->
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='32' fill='%23CD040B'/%3E%3Ctext x='90' y='80' font-family='Arial Black,Arial' font-weight='900' font-size='52' fill='white' text-anchor='middle' dominant-baseline='middle'%3EP%3C/text%3E%3Ctext x='90' y='130' font-family='Arial,sans-serif' font-weight='700' font-size='19' fill='rgba(255,255,255,0.88)' text-anchor='middle' dominant-baseline='middle'%3EPLAN CALC%3C/text%3E%3C/svg%3E">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23CD040B'/%3E%3Ctext x='16' y='21' font-family='Arial Black,Arial' font-weight='900' font-size='14' fill='white' text-anchor='middle'%3EP%3C/text%3E%3C/svg%3E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Plan Calc">
+<meta name="theme-color" content="#CD040B">
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800;900&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --red:#CD040B;--red-dark:#a30008;--red-xd:#7a0006;
+  --red-light:#fff0f0;--bg:#f0f0f0;--card:#fff;
+  --border:#e0e0e0;--text:#111;--muted:#777;
+  --green:#1a7a3c;--green-light:#e6f5ec;
+  --blue:#0055b3;--blue-light:#e8f0fb;
+  --gold:#a07800;--gold-light:#fef9e7;
+  --purple:#6b21a8;--purple-light:#f5f0ff;
+  --teal:#0e7490;--teal-light:#e0f7fa;
+  --orange:#b45309;--orange-light:#fff7ed;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+
+/* APP */
+#app{display:block;}
+.hdr{background:var(--red);color:white;display:flex;align-items:center;padding:0 16px;height:52px;position:sticky;top:0;z-index:200;box-shadow:0 2px 12px rgba(0,0,0,.2);}
+.hdr-title{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;}
+
+/* TABS */
+.tabs{display:flex;background:white;border-bottom:2px solid var(--border);position:sticky;top:52px;z-index:199;}
+.tab-btn{flex:1;padding:11px 4px;text-align:center;font-size:11px;font-weight:700;color:var(--muted);border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;font-family:'Barlow',sans-serif;text-transform:uppercase;letter-spacing:.3px;}
+.tab-btn.active{color:var(--red);border-bottom-color:var(--red);}
+
+/* PANES */
+.pane{display:none;padding:12px 12px 80px;max-width:540px;margin:0 auto;}
+.pane.active{display:block;}
+
+/* CARDS */
+.card{background:var(--card);border-radius:14px;margin-bottom:10px;box-shadow:0 1px 6px rgba(0,0,0,.07);overflow:hidden;}
+
+/* COLLAPSIBLE ROWS — used for all expandable sections */
+.coll-hdr{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 14px;cursor:pointer;user-select:none;
+  border-bottom:0px solid var(--border);transition:border-bottom .1s;
+}
+.coll-hdr.open{border-bottom:1px solid var(--border);}
+.coll-hdr-left{flex:1;}
+.coll-title{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);}
+.coll-sub{font-size:12px;color:var(--muted);margin-top:2px;font-weight:500;}
+.coll-sub.active-sub{color:var(--green);font-weight:700;}
+.coll-chevron{font-size:22px;color:var(--muted);font-weight:300;transition:transform .22s;line-height:1;padding-left:10px;flex-shrink:0;}
+.coll-chevron.open{transform:rotate(90deg);}
+.coll-body{display:none;padding:12px 14px 14px;}
+.coll-body.open{display:block;}
+
+/* BANNER */
+.banner{background:linear-gradient(135deg,var(--red) 0%,var(--red-xd) 100%);border-radius:14px;padding:16px 18px;color:white;display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;box-shadow:0 4px 18px rgba(205,4,11,.28);}
+.bn-lbl{font-size:12px;font-weight:600;opacity:.75;text-transform:uppercase;letter-spacing:.5px;}
+.bn-amt{font-family:'Barlow Condensed',sans-serif;font-size:46px;font-weight:800;line-height:1;}
+.bn-sub{font-size:12px;opacity:.7;margin-top:1px;}
+.bn-right{text-align:right;}
+.bn-pline{font-size:13px;font-weight:700;opacity:.85;}
+.bn-save{background:rgba(255,255,255,.2);border-radius:20px;padding:3px 10px;font-size:12px;font-weight:700;margin-top:5px;display:inline-block;}
+
+/* LINE ROWS */
+.line-row{display:flex;align-items:stretch;border-bottom:1px solid var(--border);min-height:62px;}
+.lr-left{display:flex;align-items:center;gap:10px;padding:10px 12px;flex:1;min-width:0;cursor:pointer;}
+.lr-num{width:26px;height:26px;border-radius:50%;background:var(--red-light);color:var(--red);font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.lr-num.byod{background:var(--orange-light);color:var(--orange);}
+.lr-plan-name{font-size:15px;font-weight:700;line-height:1.2;}
+.lr-plan-sub{font-size:11px;color:var(--muted);margin-top:1px;}
+.lr-prices{display:flex;flex-direction:column;align-items:flex-end;justify-content:center;padding:10px 10px 10px 0;gap:2px;flex-shrink:0;}
+.lr-wap{font-size:16px;font-weight:800;color:var(--text);}
+.lr-woap{font-size:12px;font-weight:600;color:#bbb;text-decoration:line-through;}
+.lr-rm{background:none;border:none;color:#ccc;font-size:22px;cursor:pointer;padding:0 10px 0 0;align-self:center;line-height:1;}
+.lr-rm:hover{color:var(--red);}
+
+/* PLAN SELECTOR */
+.plan-selector{display:none;border-top:1px solid var(--border);padding:10px 12px;background:#fafafa;}
+.plan-selector.open{display:block;}
+.ps-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:8px;}
+.ps-opts{display:flex;gap:6px;margin-bottom:8px;}
+.ps-opt{flex:1;border:2px solid var(--border);background:white;border-radius:10px;padding:8px 4px;text-align:center;cursor:pointer;transition:all .15s;}
+.ps-name{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;color:var(--muted);}
+.ps-price{font-size:13px;font-weight:800;margin-top:2px;}
+.ps-opt.au{border-color:#444;background:#f4f4f4;}.ps-opt.au .ps-name{color:#333;}.ps-opt.au .ps-price{color:#222;}
+.ps-opt.ap{border-color:var(--blue);background:var(--blue-light);}.ps-opt.ap .ps-name,.ps-opt.ap .ps-price{color:var(--blue);}
+.ps-opt.ar{border-color:var(--red);background:var(--red-light);}.ps-opt.ar .ps-name,.ps-opt.ar .ps-price{color:var(--red);}
+.ps-opt.ab{border-color:var(--orange);background:var(--orange-light);}.ps-opt.ab .ps-name,.ps-opt.ab .ps-price{color:var(--orange);}
+.byod-price-row{display:flex;align-items:center;gap:8px;padding:6px 0 2px;}
+.byod-lbl{font-size:12px;color:var(--muted);font-weight:600;flex:1;}
+.byod-inp{width:72px;border:2px solid var(--border);border-radius:8px;padding:6px 8px;font-size:14px;font-weight:800;font-family:'Barlow',sans-serif;outline:none;text-align:center;}
+.byod-inp:focus{border-color:var(--orange);}
+.byod-note{font-size:11px;color:var(--orange);margin-top:4px;font-weight:600;}
+
+/* ADD LINE */
+.add-line-row{display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;color:var(--red);font-size:14px;font-weight:700;border-top:1px solid var(--border);background:#fafafa;transition:background .15s;}
+.add-line-row:hover{background:var(--red-light);}
+.add-line-icon{width:26px;height:26px;border-radius:50%;background:var(--red);color:white;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;flex-shrink:0;}
+
+/* AP INFO BAR */
+.ap-info-bar{display:flex;align-items:center;justify-content:space-between;padding:9px 14px;background:var(--green-light);border-top:1px solid #b7ddc4;}
+.ap-info-bar span{font-size:12px;font-weight:700;color:var(--green);}
+.ap-saving{font-size:12px;font-weight:800;color:var(--green);}
+
+/* OPTION BUTTONS (protection / perks style) */
+.opt-btns{display:flex;gap:8px;margin-bottom:4px;}
+.opt-btn{flex:1;border:2px solid var(--border);background:white;border-radius:12px;padding:10px 6px;text-align:center;cursor:pointer;transition:all .15s;}
+.opt-btn .ob-icon{font-size:18px;margin-bottom:3px;}
+.opt-btn .ob-name{font-size:11px;font-weight:700;color:var(--muted);}
+.opt-btn .ob-price{font-size:14px;font-weight:800;margin-top:2px;}
+.opt-btn.sel-blue{border-color:var(--blue);background:var(--blue-light);}
+.opt-btn.sel-blue .ob-name,.opt-btn.sel-blue .ob-price{color:var(--blue);}
+.opt-btn.sel-purple{border-color:var(--purple);background:var(--purple-light);}
+.opt-btn.sel-purple .ob-name,.opt-btn.sel-purple .ob-price{color:var(--purple);}
+.opt-btn.sel-gold{border-color:var(--gold);background:var(--gold-light);}
+.opt-btn.sel-gold .ob-name,.opt-btn.sel-gold .ob-price{color:var(--gold);}
+.opt-btn.sel-teal{border-color:var(--teal);background:var(--teal-light);}
+.opt-btn.sel-teal .ob-name,.opt-btn.sel-teal .ob-price{color:var(--teal);}
+
+/* STEPPER */
+.stepper-row{display:flex;align-items:center;justify-content:space-between;margin-top:10px;}
+.stepper-lbl{font-size:13px;color:var(--muted);font-weight:600;}
+.stepper{display:flex;align-items:center;border:2px solid var(--border);border-radius:10px;overflow:hidden;}
+.step-btn{width:32px;height:32px;border:none;background:#f5f5f5;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:300;line-height:1;}
+.step-btn:hover{background:#e8e8e8;}
+.step-val{width:30px;text-align:center;font-size:14px;font-weight:800;}
+
+/* DEVICE NOTE */
+.device-note{font-size:11px;margin-bottom:10px;line-height:1.5;border-radius:8px;padding:8px 10px;}
+.device-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);}
+.device-row:last-of-type{border-bottom:none;}
+.dev-left{display:flex;align-items:center;gap:10px;}
+.dev-icon{font-size:18px;width:28px;text-align:center;}
+.dev-name{font-size:14px;font-weight:700;}
+.dev-pricing{font-size:11px;color:var(--muted);margin-top:1px;}
+.dev-right{display:flex;align-items:center;gap:8px;}
+.dev-cost{font-size:13px;font-weight:800;color:var(--muted);min-width:46px;text-align:right;}
+.dev-cost.has-cost{color:var(--teal);}
+
+/* DISCOUNTS */
+.disc-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);}
+.disc-item:last-child{border-bottom:none;}
+.disc-check{width:20px;height:20px;accent-color:var(--red);cursor:pointer;flex-shrink:0;}
+.disc-name{flex:1;font-size:14px;font-weight:600;cursor:pointer;}
+.disc-amt{font-size:14px;font-weight:800;color:var(--green);white-space:nowrap;}
+.disc-del{background:none;border:none;color:#ccc;font-size:20px;cursor:pointer;padding:0 0 0 4px;line-height:1;}
+.disc-del:hover{color:var(--red);}
+.add-disc-row{display:flex;gap:6px;margin-top:10px;}
+.d-inp{border:2px solid var(--border);border-radius:8px;padding:8px 10px;font-size:14px;font-family:'Barlow',sans-serif;outline:none;}
+.d-inp.nm{flex:1;}
+.d-inp.am{width:68px;}
+.add-d-btn{background:var(--red);color:white;border:none;border-radius:8px;padding:8px 14px;font-size:14px;font-weight:800;font-family:'Barlow',sans-serif;cursor:pointer;white-space:nowrap;}
+
+/* BILL */
+.bill-rows{padding:0;}
+.bill-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:14px;}
+.bill-row:last-child{border-bottom:none;}
+.br-lbl{color:var(--muted);font-weight:500;display:flex;align-items:center;gap:5px;flex-wrap:wrap;flex:1;padding-right:8px;}
+.br-val{font-weight:700;white-space:nowrap;}
+.br-save{color:var(--green);font-weight:700;white-space:nowrap;}
+.br-total{font-size:18px;font-weight:800;color:var(--red);}
+.br-total-lbl{font-size:15px;font-weight:800;color:var(--text);}
+.bdg{font-size:10px;font-weight:700;padding:2px 6px;border-radius:20px;}
+.bdg-u{background:var(--red-light);color:var(--red);}
+.bdg-p{background:var(--blue-light);color:var(--blue);}
+.bdg-w{background:#eee;color:#444;}
+.bdg-b{background:var(--orange-light);color:var(--orange);}
+
+/* EMPLOYEE */
+.emp-hero{background:linear-gradient(135deg,var(--red) 0%,var(--red-xd) 100%);border-radius:14px;padding:20px;color:white;text-align:center;margin-bottom:10px;box-shadow:0 6px 22px rgba(205,4,11,.28);}
+.eh-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;opacity:.75;}
+.eh-amt{font-family:'Barlow Condensed',sans-serif;font-size:54px;font-weight:800;line-height:1;margin:4px 0 2px;}
+.eh-sub{font-size:12px;opacity:.7;}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+.stat-card{background:white;border-radius:12px;padding:14px 12px;box-shadow:0 1px 5px rgba(0,0,0,.07);}
+.sc-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:3px;}
+.sc-val{font-size:20px;font-weight:800;}
+.sc-sub{font-size:11px;color:var(--muted);}
+.tier-box{background:var(--blue-light);border-radius:12px;padding:14px;font-size:13px;line-height:1.7;color:var(--blue);}
+
+/* SETTINGS */
+.price-tbl{width:100%;border-collapse:collapse;}
+.price-tbl th{font-size:11px;font-weight:700;text-transform:uppercase;color:var(--muted);padding:0 4px 8px;text-align:center;}
+.price-tbl th:first-child{text-align:left;}
+.price-tbl td{padding:3px;}
+.price-tbl td:first-child{font-size:12px;font-weight:700;color:var(--muted);white-space:nowrap;padding-right:6px;}
+.price-tbl input{width:100%;border:2px solid var(--border);border-radius:6px;padding:6px 4px;font-size:13px;font-family:'Barlow',sans-serif;text-align:center;font-weight:700;outline:none;}
+.price-tbl input:focus{border-color:var(--red);}
+.reset-btn{width:100%;padding:10px;background:#f5f5f5;border:2px solid var(--border);border-radius:10px;font-size:14px;font-weight:700;font-family:'Barlow',sans-serif;cursor:pointer;color:var(--muted);margin-top:10px;}
+.reset-btn:hover{border-color:var(--red);color:var(--red);background:var(--red-light);}
+.set-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.set-lbl{font-size:13px;color:var(--muted);font-weight:600;flex:0 0 120px;}
+.set-inp{flex:1;border:2px solid var(--border);border-radius:8px;padding:8px 10px;font-size:14px;font-family:'Barlow',sans-serif;outline:none;font-weight:700;}
+.set-inp:focus{border-color:var(--red);}
+.section-note{font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.5;}
+
+/* BILL HERO */
+.bill-hero{background:linear-gradient(160deg,var(--red) 0%,var(--red-xd) 100%);border-radius:14px;padding:18px 18px 14px;margin-bottom:10px;box-shadow:0 4px 18px rgba(205,4,11,.28);color:white;}
+.bh-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.bh-lbl{font-size:11px;font-weight:700;opacity:.75;text-transform:uppercase;letter-spacing:.5px;}
+.bh-amt{font-family:'Barlow Condensed',sans-serif;font-size:46px;font-weight:800;line-height:1;}
+.bh-sub{font-size:12px;opacity:.7;margin-top:1px;}
+.bh-right{text-align:right;}
+.bh-pline{font-size:13px;font-weight:700;opacity:.85;}
+.bh-save{background:rgba(255,255,255,.2);border-radius:20px;padding:3px 10px;font-size:12px;font-weight:700;margin-top:5px;display:inline-block;}
+.bh-divider{border:none;border-top:1px solid rgba(255,255,255,.2);margin-bottom:10px;}
+/* Override bill-row colors inside hero */
+.bill-hero .bill-row{border-bottom-color:rgba(255,255,255,.15);}
+.bill-hero .br-lbl{color:rgba(255,255,255,.75);}
+.bill-hero .br-val{color:white;}
+.bill-hero .br-save{color:#7effa7;}
+.bill-hero .br-total{font-size:18px;font-weight:800;color:white;}
+.bill-hero .br-total-lbl{font-size:15px;font-weight:800;color:white;}
+.bill-hero .bdg-u{background:rgba(255,255,255,.2);color:white;}
+.bill-hero .bdg-p{background:rgba(255,255,255,.2);color:white;}
+.bill-hero .bdg-w{background:rgba(255,255,255,.2);color:white;}
+.bill-hero .bdg-b{background:rgba(255,255,255,.2);color:white;}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="hdr"><div class="hdr-title">📱 myPlan Calc</div></div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="goTab('customer')">Customer</button>
+    <button class="tab-btn" onclick="goTab('emp')">Emp / Disc</button>
+  </div>
+
+  <!-- ═══ CUSTOMER ═══ -->
+  <div class="pane active" id="pane-customer">
+
+    <!-- Lines -->
+    <div class="card">
+      <div id="linesList"></div>
+      <div class="ap-info-bar" id="apInfoBar">
+        <span>✓ Autopay + Paper-free included</span>
+        <span class="ap-saving" id="apSavingLbl"></span>
+      </div>
+    </div>
+
+    <!-- Tablets & Watches -->
+    <div class="card">
+      <div class="coll-hdr" id="devHdr" onclick="toggleSection('dev')">
+        <div class="coll-hdr-left">
+          <div class="coll-title">Tablets &amp; Watches</div>
+          <div class="coll-sub" id="devSub">None added</div>
+        </div>
+        <div class="coll-chevron" id="devChev">›</div>
+      </div>
+      <div class="coll-body" id="devBody">
+        <div class="device-note" id="deviceNote"></div>
+        <div class="device-row">
+          <div class="dev-left">
+            <div class="dev-icon">💻</div>
+            <div><div class="dev-name">Tablet</div><div class="dev-pricing">$20/mo · 50% off eligible</div></div>
+          </div>
+          <div class="dev-right">
+            <div class="dev-cost" id="tabletCost">$0</div>
+            <div class="stepper">
+              <button class="step-btn" onclick="changeDevice('tablet',-1)">−</button>
+              <div class="step-val" id="tabletVal">0</div>
+              <button class="step-btn" onclick="changeDevice('tablet',1)">+</button>
+            </div>
+          </div>
+        </div>
+        <div class="device-row">
+          <div class="dev-left">
+            <div class="dev-icon">⌚</div>
+            <div><div class="dev-name">Watch</div><div class="dev-pricing">$15/mo · 50% off eligible</div></div>
+          </div>
+          <div class="dev-right">
+            <div class="dev-cost" id="watchCost">$0</div>
+            <div class="stepper">
+              <button class="step-btn" onclick="changeDevice('watch',-1)">−</button>
+              <div class="step-val" id="watchVal">0</div>
+              <button class="step-btn" onclick="changeDevice('watch',1)">+</button>
+            </div>
+          </div>
+        </div>
+        <div id="devEligSummary" style="display:none;margin-top:8px;font-size:12px;font-weight:700;color:var(--green)"></div>
+      </div>
+    </div>
+
+    <!-- Protection -->
+    <div class="card">
+      <div class="coll-hdr" id="protHdr" onclick="toggleSection('prot')">
+        <div class="coll-hdr-left">
+          <div class="coll-title">Device Protection</div>
+          <div class="coll-sub" id="protSub">None selected</div>
+        </div>
+        <div class="coll-chevron" id="protChev">›</div>
+      </div>
+      <div class="coll-body" id="protBody">
+        <div class="opt-btns">
+          <div class="opt-btn" id="protNone" onclick="setProt('none')">
+            <div class="ob-icon">🚫</div><div class="ob-name">None</div>
+            <div class="ob-price" style="color:var(--muted)">$0</div>
+          </div>
+          <div class="opt-btn" id="protLine" onclick="setProt('line')">
+            <div class="ob-icon">📱</div><div class="ob-name">Per Line</div>
+            <div class="ob-price">$19/line</div>
+          </div>
+          <div class="opt-btn" id="protAcct" onclick="setProt('account')">
+            <div class="ob-icon">🛡️</div><div class="ob-name">Whole Acct</div>
+            <div class="ob-price">$68/mo</div>
+          </div>
+        </div>
+        <div class="stepper-row" id="protLinesRow" style="display:none">
+          <div class="stepper-lbl">Lines with protection</div>
+          <div class="stepper">
+            <button class="step-btn" onclick="changeProtLines(-1)">−</button>
+            <div class="step-val" id="protLinesVal">1</div>
+            <button class="step-btn" onclick="changeProtLines(1)">+</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Perks -->
+    <div class="card">
+      <div class="coll-hdr" id="perkHdr" onclick="toggleSection('perk')">
+        <div class="coll-hdr-left">
+          <div class="coll-title">Perks</div>
+          <div class="coll-sub" id="perkSub">None selected</div>
+        </div>
+        <div class="coll-chevron" id="perkChev">›</div>
+      </div>
+      <div class="coll-body" id="perkBody">
+        <div class="opt-btns">
+          <div class="opt-btn" id="perkNone" onclick="setPerkTier('none')">
+            <div class="ob-icon">🚫</div><div class="ob-name">No Perks</div>
+            <div class="ob-price" style="color:var(--muted)">$0</div>
+          </div>
+          <div class="opt-btn" id="perk10" onclick="setPerkTier('10')">
+            <div class="ob-icon">⭐</div><div class="ob-name">$10 Perk</div>
+            <div class="ob-price">$10/ea</div>
+          </div>
+          <div class="opt-btn" id="perk15" onclick="setPerkTier('15')">
+            <div class="ob-icon">🌟</div><div class="ob-name">$15 Perk</div>
+            <div class="ob-price">$15/ea</div>
+          </div>
+        </div>
+        <div class="stepper-row" id="perkCountRow" style="display:none">
+          <div class="stepper-lbl" id="perkCountLbl">Number of perks</div>
+          <div class="stepper">
+            <button class="step-btn" onclick="changePerkCount(-1)">−</button>
+            <div class="step-val" id="perkCountVal">1</div>
+            <button class="step-btn" onclick="changePerkCount(1)">+</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Discounts -->
+    <div class="card">
+      <div class="coll-hdr" id="discHdr" onclick="toggleSection('disc')">
+        <div class="coll-hdr-left">
+          <div class="coll-title">Discounts</div>
+          <div class="coll-sub" id="discSub">Tap to view available discounts</div>
+        </div>
+        <div class="coll-chevron" id="discChev">›</div>
+      </div>
+      <div class="coll-body" id="discBody">
+        <div id="discList"></div>
+      </div>
+    </div>
+
+    <!-- Bill Hero Banner -->
+    <div class="bill-hero">
+      <div class="bh-top">
+        <div>
+          <div class="bh-lbl">Monthly Total</div>
+          <div class="bh-amt" id="bnAmt">$0</div>
+          <div class="bh-sub" id="bnSub">—</div>
+        </div>
+        <div class="bh-right">
+          <div class="bh-pline" id="bnPL"></div>
+          <div class="bh-save" id="bnSave" style="display:none"></div>
+        </div>
+      </div>
+      <div class="bh-divider"></div>
+      <div class="bill-rows" id="billRows"></div>
+    </div>
+
+  </div><!-- /customer -->
+
+  <!-- ═══ EMPLOYEE + DISCOUNTS ═══ -->
+  <div class="pane" id="pane-emp">
+
+    <!-- Total commission hero -->
+    <div class="emp-hero">
+      <div class="eh-lbl">Projected Earnings — This Sale</div>
+      <div class="eh-amt" id="empTotalAmt">$0</div>
+      <div class="eh-sub" id="empSub">Based on lines selected on Customer tab</div>
+    </div>
+
+    <!-- Sale Breakdown -->
+    <div class="card" style="padding:14px;margin-bottom:10px">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:8px">Sale Breakdown</div>
+      <div id="saleCountsAs" style="font-size:13px;color:var(--muted);line-height:1.7"></div>
+    </div>
+
+    <!-- Discounts management -->
+    <div class="card">
+      <div class="coll-hdr" id="discMgmtHdr" onclick="toggleSection('discMgmt')">
+        <div class="coll-hdr-left">
+          <div class="coll-title">Manage Discounts</div>
+          <div class="coll-sub">Add or remove available discounts</div>
+        </div>
+        <div class="coll-chevron" id="discMgmtChev">›</div>
+      </div>
+      <div class="coll-body" id="discMgmtBody">
+        <div class="section-note">Discounts appear on the Customer tab. Toggle Per-Line or Flat per discount.</div>
+        <div id="discMgmtList"></div>
+        <div class="add-disc-row">
+          <input class="d-inp nm" id="newDN" placeholder="Discount name"/>
+          <input class="d-inp am" id="newDA" type="number" placeholder="$/mo"/>
+          <button class="add-d-btn" onclick="addDisc()">+ Add</button>
+        </div>
+        <div id="discTypeList" style="margin-top:10px"></div>
+      </div>
+    </div>
+
+  </div><!-- /emp -->
+
+</div><!-- /app -->
+
+<script>
+/* ── CONSTANTS ── */
+const DEF_PRICING={
+  ultimate:[95,85,70,60],
+  plus:    [80,70,55,45],
+  welcome: [65,55,40,30],
+};
+const LINE_LABELS=['1 Line','2 Lines','3 Lines','4+ Lines'];
+const PLAN_NAMES={ultimate:'Unlimited Ultimate',plus:'Unlimited Plus',welcome:'Unlimited Welcome',byod:'BYOD'};
+const PLAN_SHORT={ultimate:'Ultimate',plus:'Plus',welcome:'Welcome',byod:'BYOD'};
+
+function discSlots(plan){return plan==='welcome'?1:(plan==='plus'||plan==='ultimate')?2:0;}
+
+const DEF_DISCS=[
+  {id:'d1',name:'Employee / Friends & Family',amount:22,perLine:true, active:false},
+  {id:'d2',name:'Military / First Responder', amount:10,perLine:true, active:false},
+  {id:'d3',name:'Trade-In Promo',             amount:15,perLine:false,active:false},
+];
+
+/* ── STATE ── */
+let S={
+  lines:[{plan:'plus'},{plan:'plus'}],
+  openLine:-1,
+  tablets:0,watches:0,
+  prot:'none',protLines:1,
+  perkTier:'none',perkCount:1,
+  pricing:JSON.parse(JSON.stringify(DEF_PRICING)),
+  discs:JSON.parse(JSON.stringify(DEF_DISCS)),
+  apDisc:10,
+  byodPrice:10,
+  openSections:{dev:false,prot:false,perk:false,disc:false,discMgmt:false},
+};
+
+function loadState(){try{const r=localStorage.getItem('pcaS7');if(r)Object.assign(S,JSON.parse(r));}catch(e){}}
+function saveState(){
+  localStorage.setItem('pcaS7',JSON.stringify(S));
+}
+
+/* ── TABS ── */
+function goTab(t){
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',['customer','emp'][i]===t));
+  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active'));
+  document.getElementById('pane-'+t).classList.add('active');
+  recalc();
+}
+
+/* ── COLLAPSIBLE SECTIONS ── */
+function toggleSection(key){
+  S.openSections[key]=!S.openSections[key];
+  applySectionUI(key);
+  saveState();
+}
+function applySectionUI(key){
+  const open=S.openSections[key];
+  const hdr=document.getElementById(key+'Hdr');
+  const body=document.getElementById(key+'Body');
+  const chev=document.getElementById(key+'Chev');
+  if(hdr) hdr.classList.toggle('open',open);
+  if(body) body.classList.toggle('open',open);
+  if(chev) chev.classList.toggle('open',open);
+}
+function initSections(){
+  Object.keys(S.openSections).forEach(k=>applySectionUI(k));
+}
+
+/* ── PRICING ── */
+function getPrice(plan,n){
+  if(plan==='byod')return S.byodPrice||10;
+  const t=S.pricing[plan]||DEF_PRICING[plan];
+  return t[Math.min(n,4)-1]??t[t.length-1];
+}
+
+/* ── DEVICE BREAKDOWN ── */
+function calcDeviceBreakdown(){
+  const totalSlots=S.lines.reduce((sum,ln)=>sum+discSlots(ln.plan||'plus'),0);
+  let slotsLeft=Math.min(totalSlots,S.tablets+S.watches);
+  const watchDisc=Math.min(slotsLeft,S.watches);
+  slotsLeft=Math.max(0,slotsLeft-watchDisc);
+  const tabletDisc=Math.min(slotsLeft,S.tablets);
+  const watchCost=(S.watches-watchDisc)*15+watchDisc*7.5;
+  const tabletCost=(S.tablets-tabletDisc)*20+tabletDisc*10;
+  return{watchCost,tabletCost,totalDeviceCost:watchCost+tabletCost,
+    totalDiscount:watchDisc*7.5+tabletDisc*10,tabletDisc,watchDisc,totalSlots};
+}
+
+/* ── LINES ── */
+function renderLines(){
+  const n=S.lines.length;
+  const apD=S.apDisc;
+  const myPlanCount=S.lines.filter(ln=>(ln.plan||'plus')!=='byod').length;
+  document.getElementById('apSavingLbl').textContent=myPlanCount>0?`−$${apD*myPlanCount}/mo`:'';
+
+  const list=document.getElementById('linesList');
+  list.innerHTML='';
+  S.lines.forEach((ln,i)=>{
+    const plan=ln.plan||'plus';
+    const isByod=plan==='byod';
+    const wp=getPrice(plan,myPlanCount);
+    const wop=isByod?wp:wp+apD;
+    const isOpen=S.openLine===i;
+    const wrap=document.createElement('div');
+
+    // Main row
+    const row=document.createElement('div');
+    row.className='line-row';
+    const left=document.createElement('div');
+    left.className='lr-left';
+    left.onclick=()=>toggleLine(i);
+    const numDiv=document.createElement('div');
+    numDiv.className='lr-num'+(isByod?' byod':'');
+    numDiv.textContent=i+1;
+    const infoDiv=document.createElement('div');
+    infoDiv.innerHTML=`<div class="lr-plan-name">${isByod?`BYOD — $${wp}/mo`:PLAN_NAMES[plan]}</div>
+      <div class="lr-plan-sub">${isByod?'No autopay discount · Tap to edit':'Tap to change plan'}</div>`;
+    left.appendChild(numDiv);left.appendChild(infoDiv);
+    const prices=document.createElement('div');
+    prices.className='lr-prices';
+    if(isByod){
+      prices.innerHTML=`<div class="lr-wap" style="color:var(--orange)">$${wp}</div><div class="lr-woap" style="text-decoration:none;color:var(--muted);font-size:11px">BYOD</div>`;
+    } else {
+      prices.innerHTML=`<div class="lr-wap">$${wp}</div><div class="lr-woap">$${wop}</div>`;
+    }
+    const rm=document.createElement('button');
+    rm.className='lr-rm';rm.textContent='×';
+    rm.style.display=n>1?'block':'none';
+    rm.onclick=e=>{e.stopPropagation();rmLine(i);};
+    row.appendChild(left);row.appendChild(prices);row.appendChild(rm);
+    wrap.appendChild(row);
+
+    // Plan selector
+    const sel=document.createElement('div');
+    sel.className='plan-selector'+(isOpen?' open':'');
+    const sc={ultimate:'ar',plus:'ap',welcome:'au',byod:'ab'};
+    let html=`<div class="ps-title">Select Line Type</div><div class="ps-opts">
+      ${['ultimate','plus','welcome'].map(p=>`
+        <div class="ps-opt ${plan===p?sc[p]:''}" onclick="setLP(${i},'${p}');event.stopPropagation()">
+          <div class="ps-name">${PLAN_SHORT[p]}</div>
+          <div class="ps-price">$${getPrice(p,myPlanCount)}</div>
+        </div>`).join('')}
+      <div class="ps-opt ${plan==='byod'?sc['byod']:''}" onclick="setLP(${i},'byod');event.stopPropagation()">
+        <div class="ps-name">BYOD</div>
+        <div class="ps-price">$${S.byodPrice}</div>
+      </div>
+    </div>`;
+    if(isByod){
+      html+=`<div class="byod-price-row">
+        <div class="byod-lbl">BYOD price (changes)</div>
+        <input class="byod-inp" type="number" value="${S.byodPrice}"
+          onclick="event.stopPropagation()"
+          onchange="S.byodPrice=parseFloat(this.value)||0;saveState();renderLines();recalc()"/>
+      </div><div class="byod-note">⚡ Edit when Verizon changes the BYOD rate</div>`;
+    }
+    sel.innerHTML=html;
+    wrap.appendChild(sel);
+    list.appendChild(wrap);
+  });
+
+  // Add line row
+  if(n<10){
+    const addRow=document.createElement('div');
+    addRow.className='add-line-row';
+    addRow.onclick=addLine;
+    addRow.innerHTML=`<div class="add-line-icon">+</div><span>Add Line ${n+1}</span>`;
+    list.appendChild(addRow);
+  }
+  updateDeviceNote();
+}
+
+function toggleLine(i){S.openLine=S.openLine===i?-1:i;renderLines();}
+function setLP(i,plan){S.lines[i].plan=plan;S.openLine=plan==='byod'?i:-1;saveState();renderLines();recalc();}
+function addLine(){
+  if(S.lines.length>=10)return;
+  S.lines.push({plan:'plus'});
+  S.openLine=S.lines.length-1;
+  saveState();renderLines();recalc();
+}
+function rmLine(i){
+  S.lines.splice(i,1);
+  if(S.openLine>=S.lines.length)S.openLine=-1;
+  if(S.protLines>S.lines.length)S.protLines=S.lines.length;
+  document.getElementById('protLinesVal').textContent=S.protLines;
+  saveState();renderLines();recalc();
+}
+
+/* ── DEVICE NOTE ── */
+function updateDeviceNote(){
+  const totalSlots=S.lines.reduce((sum,ln)=>sum+discSlots(ln.plan||'plus'),0);
+  const wCount=S.lines.filter(ln=>(ln.plan||'plus')==='welcome').length;
+  const puCount=S.lines.filter(ln=>['plus','ultimate'].includes(ln.plan||'plus')).length;
+  const note=document.getElementById('deviceNote');
+  if(totalSlots===0){
+    note.style.cssText='background:#fff8e1;color:#7a5800;font-size:11px;margin-bottom:10px;line-height:1.5;border-radius:8px;padding:8px 10px;';
+    note.textContent='No myPlan lines — all devices at full price.';
+  } else {
+    const parts=[];
+    if(wCount>0)parts.push(`Welcome ×${wCount} = ${wCount} slot${wCount>1?'s':''}`);
+    if(puCount>0)parts.push(`Plus/Ult ×${puCount} = ${puCount*2} slots`);
+    note.style.cssText='background:var(--blue-light);color:var(--blue);font-size:11px;margin-bottom:10px;line-height:1.5;border-radius:8px;padding:8px 10px;';
+    note.innerHTML=`<strong>${totalSlots} 50%-off slot${totalSlots>1?'s':''} available</strong> · ${parts.join(' · ')}`;
+  }
+}
+
+/* ── DEVICES ── */
+function changeDevice(type,d){
+  if(type==='tablet')S.tablets=Math.max(0,S.tablets+d);
+  else S.watches=Math.max(0,S.watches+d);
+  saveState();recalc();
+}
+function updateDeviceCosts(){
+  const bd=calcDeviceBreakdown();
+  document.getElementById('tabletVal').textContent=S.tablets;
+  document.getElementById('watchVal').textContent=S.watches;
+  const tc=document.getElementById('tabletCost');
+  tc.textContent=S.tablets>0?'$'+bd.tabletCost.toFixed(2):'$0';
+  tc.className='dev-cost'+(S.tablets>0?' has-cost':'');
+  const wc=document.getElementById('watchCost');
+  wc.textContent=S.watches>0?'$'+bd.watchCost.toFixed(2):'$0';
+  wc.className='dev-cost'+(S.watches>0?' has-cost':'');
+  const elig=document.getElementById('devEligSummary');
+  const total=S.tablets+S.watches;
+  if(total>0){
+    const discN=bd.tabletDisc+bd.watchDisc;
+    const fullN=total-discN;
+    let txt='';
+    if(discN>0)txt+=`✓ ${discN} device${discN>1?'s':''} at 50% off`;
+    if(fullN>0)txt+=(discN>0?' · ':'')+`${fullN} at full price`;
+    if(bd.totalDiscount>0)txt+=` · Saving $${bd.totalDiscount.toFixed(2)}/mo`;
+    elig.textContent=txt;elig.style.display='block';
+  } else elig.style.display='none';
+
+  // Update device section subtitle
+  const devSub=document.getElementById('devSub');
+  if(total===0){devSub.textContent='None added';devSub.className='coll-sub';}
+  else{
+    const parts=[];
+    if(S.tablets>0)parts.push(`${S.tablets} tablet${S.tablets>1?'s':''}`);
+    if(S.watches>0)parts.push(`${S.watches} watch${S.watches>1?'es':''}`);
+    devSub.textContent=parts.join(', ')+` · $${(bd.totalDeviceCost).toFixed(2)}/mo`;
+    devSub.className='coll-sub active-sub';
+  }
+}
+
+/* ── PROTECTION ── */
+function setProt(type){
+  S.prot=type;
+  document.getElementById('protNone').className='opt-btn'+(type==='none'?' sel-blue':'');
+  document.getElementById('protLine').className='opt-btn'+(type==='line'?' sel-blue':'');
+  document.getElementById('protAcct').className='opt-btn'+(type==='account'?' sel-purple':'');
+  document.getElementById('protLinesRow').style.display=type==='line'?'flex':'none';
+  // update subtitle
+  const sub=document.getElementById('protSub');
+  if(type==='none'){sub.textContent='None selected';sub.className='coll-sub';}
+  else if(type==='line'){sub.textContent=`$19 × ${S.protLines} line${S.protLines>1?'s':''}`;sub.className='coll-sub active-sub';}
+  else{sub.textContent='$68/mo whole account';sub.className='coll-sub active-sub';}
+  saveState();recalc();
+}
+function changeProtLines(d){
+  S.protLines=Math.max(1,Math.min(S.lines.length,S.protLines+d));
+  document.getElementById('protLinesVal').textContent=S.protLines;
+  setProt('line');
+}
+
+/* ── PERKS ── */
+function setPerkTier(tier){
+  S.perkTier=tier;
+  document.getElementById('perkNone').className='opt-btn'+(tier==='none'?' sel-gold':'');
+  document.getElementById('perk10').className='opt-btn'+(tier==='10'?' sel-gold':'');
+  document.getElementById('perk15').className='opt-btn'+(tier==='15'?' sel-gold':'');
+  document.getElementById('perkCountRow').style.display=tier!=='none'?'flex':'none';
+  document.getElementById('perkCountLbl').textContent=`Number of $${tier} perks`;
+  updatePerkSub();
+  saveState();recalc();
+}
+function changePerkCount(d){
+  S.perkCount=Math.max(1,Math.min(20,S.perkCount+d));
+  document.getElementById('perkCountVal').textContent=S.perkCount;
+  updatePerkSub();saveState();recalc();
+}
+function updatePerkSub(){
+  const sub=document.getElementById('perkSub');
+  if(S.perkTier==='none'){sub.textContent='None selected';sub.className='coll-sub';}
+  else{
+    const cost=(parseFloat(S.perkTier)||0)*S.perkCount;
+    sub.textContent=`${S.perkCount}× $${S.perkTier} perk${S.perkCount>1?'s':''} · $${cost}/mo`;
+    sub.className='coll-sub active-sub';
+  }
+}
+function initPerksUI(){
+  setPerkTier(S.perkTier||'none');
+  document.getElementById('perkCountVal').textContent=S.perkCount||1;
+}
+
+/* ── DISCOUNTS ── */
+function renderDiscounts(){
+  const activeDiscs=S.discs.filter(d=>d.active);
+  const sub=document.getElementById('discSub');
+  if(activeDiscs.length){
+    const saveTot=activeDiscs.reduce((s,d)=>s+d.amount,0);
+    sub.textContent=`${activeDiscs.length} applied · −$${saveTot}/mo`;
+    sub.className='coll-sub active-sub';
+  } else {
+    sub.textContent='Tap to view available discounts';
+    sub.className='coll-sub';
+  }
+  // Customer list
+  const dl=document.getElementById('discList');
+  if(dl)dl.innerHTML=S.discs.length?S.discs.map(d=>`
+    <div class="disc-item">
+      <input type="checkbox" class="disc-check" id="dc_${d.id}" ${d.active?'checked':''} onchange="toggleDisc('${d.id}')">
+      <label for="dc_${d.id}" class="disc-name">${d.name}</label>
+      <span class="disc-amt">−$${d.amount}${d.perLine?'/line':'/mo'}</span>
+    </div>`).join(''):'<div style="color:var(--muted);font-size:14px;padding:4px 0">No discounts in Emp/Disc tab yet.</div>';
+  // Mgmt list
+  const ml=document.getElementById('discMgmtList');
+  if(ml)ml.innerHTML=S.discs.length?S.discs.map(d=>`
+    <div class="disc-item">
+      <div class="disc-name">${d.name}</div>
+      <span class="disc-amt" style="margin-right:6px">$${d.amount}${d.perLine?'/line':'/mo'}</span>
+      <button class="disc-del" onclick="rmDisc('${d.id}')">×</button>
+    </div>`).join(''):'';
+  // Type toggles
+  const tl=document.getElementById('discTypeList');
+  if(tl)tl.innerHTML=S.discs.map(d=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+      <div style="font-size:13px;font-weight:600;flex:1;color:var(--muted)">${d.name}</div>
+      <div style="display:flex;gap:5px">
+        <button onclick="setDType('${d.id}',true)" style="padding:4px 8px;border-radius:6px;border:2px solid ${d.perLine?'var(--red)':'var(--border)'};background:${d.perLine?'var(--red-light)':'white'};color:${d.perLine?'var(--red)':'var(--muted)'};font-size:11px;font-weight:700;cursor:pointer;font-family:'Barlow',sans-serif">Per Line</button>
+        <button onclick="setDType('${d.id}',false)" style="padding:4px 8px;border-radius:6px;border:2px solid ${!d.perLine?'var(--green)':'var(--border)'};background:${!d.perLine?'var(--green-light)':'white'};color:${!d.perLine?'var(--green)':'var(--muted)'};font-size:11px;font-weight:700;cursor:pointer;font-family:'Barlow',sans-serif">Flat</button>
+      </div>
+    </div>`).join('');
+}
+function toggleDisc(id){const d=S.discs.find(x=>x.id===id);if(d){d.active=!d.active;saveState();renderDiscounts();recalc();}}
+function rmDisc(id){S.discs=S.discs.filter(x=>x.id!==id);saveState();renderDiscounts();recalc();}
+function addDisc(){
+  const name=document.getElementById('newDN').value.trim();
+  const amt=parseFloat(document.getElementById('newDA').value);
+  if(!name||isNaN(amt)||amt<=0)return;
+  S.discs.push({id:'d'+Date.now(),name,amount:amt,perLine:false,active:false});
+  document.getElementById('newDN').value='';document.getElementById('newDA').value='';
+  saveState();renderDiscounts();recalc();
+}
+function setDType(id,perLine){const d=S.discs.find(x=>x.id===id);if(d){d.perLine=perLine;saveState();renderDiscounts();recalc();}}
+
+/* pricing editor removed */
+
+/* ── FLAT-RATE PAYOUTS ──
+  New myPlan activation:  $120/line
+  Plus or Ultimate:       +$20/line bonus on top
+  BYOD:                   $100/line
+  Protection:             100% of what customer pays (e.g. 2×$19 = $38)
+  Perks:                  100% of what customer pays (e.g. 4×$10 = $40)
+  Tablets/Watches:        $50 each
+*/
+const SPIFF = {
+  activation: 120,
+  planBonus:  20,   // extra for Plus or Ultimate
+  byod:       100,
+  device:     50,
+};
+
+/* ── HELPERS ── */
+function row(label, amt, color){
+  return `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border)">
+    <span style="font-size:13px;color:var(--muted)">${label}</span>
+    <strong style="font-size:15px;color:${color}">$${amt.toFixed(0)}</strong>
+  </div>`;
+}
+function empty(msg){
+  return `<span style="font-size:13px;color:var(--muted)">${msg}</span>`;
+}
+
+/* ── RECALC ── */
+function recalc(){
+  const n=S.lines.length;
+  const apD=S.apDisc;
+  const myPlanLines=S.lines.filter(ln=>(ln.plan||'plus')!=='byod');
+
+  // Plan totals (prices already WITH autopay baked in)
+  let planTotal=0;
+  S.lines.forEach(ln=>planTotal+=getPrice(ln.plan||'plus',myPlanLines.length));
+
+  const bd=calcDeviceBreakdown();
+
+  let protCost=0;
+  if(S.prot==='line')protCost=19*S.protLines;
+  else if(S.prot==='account')protCost=68;
+
+  const perkPrice=S.perkTier==='none'?0:parseFloat(S.perkTier)||0;
+  const perksCost=perkPrice*(S.perkCount||1);
+
+  const activeDiscs=S.discs.filter(d=>d.active);
+  const discSav=activeDiscs.reduce((s,d)=>s+(d.perLine?d.amount*myPlanLines.length:d.amount),0);
+
+  const total=Math.max(0,planTotal+bd.totalDeviceCost+protCost+perksCost-discSav);
+  const totalSav=discSav+bd.totalDiscount;
+  const ppl=n>0?(total/n).toFixed(2):'0.00';
+
+  // Banner
+  document.getElementById('bnAmt').textContent='$'+total.toFixed(2);
+  const byodCount=S.lines.filter(ln=>(ln.plan||'plus')==='byod').length;
+  let subParts=`${n} line${n!==1?'s':''}`;
+  if(byodCount>0)subParts+=` (${byodCount} BYOD)`;
+  subParts+=' · Autopay included';
+  document.getElementById('bnSub').textContent=subParts;
+  document.getElementById('bnPL').textContent='$'+ppl+'/line';
+  const sv=document.getElementById('bnSave');
+  if(totalSav>0){sv.textContent='Saving $'+totalSav.toFixed(2)+'/mo';sv.style.display='inline-block';}
+  else sv.style.display='none';
+
+  document.getElementById('apSavingLbl').textContent=myPlanLines.length>0?`−$${apD*myPlanLines.length}/mo`:'';
+
+  updateDeviceCosts();
+
+  // Bill breakdown rows
+  const planCts={};
+  S.lines.forEach(ln=>{const p=ln.plan||'plus';planCts[p]=(planCts[p]||0)+1;});
+  let rows='';
+  Object.entries(planCts).forEach(([plan,cnt])=>{
+    const pplv=getPrice(plan,myPlanLines.length);
+    const isByod=plan==='byod';
+    const bdgClass=isByod?'bdg-b':`bdg-${plan[0]}`;
+    const label=isByod?'BYOD':PLAN_SHORT[plan];
+    rows+=`<div class="bill-row"><span class="br-lbl"><span class="bdg ${bdgClass}">${label}</span>×${cnt} @ $${pplv} ${isByod?'flat':'w/AP'}</span><span class="br-val">$${(pplv*cnt).toFixed(2)}</span></div>`;
+  });
+  if(S.tablets>0)rows+=`<div class="bill-row"><span class="br-lbl">💻 Tablets ×${S.tablets}${bd.tabletDisc>0?` (${bd.tabletDisc} at 50% off)`:''}</span><span class="br-val">$${bd.tabletCost.toFixed(2)}</span></div>`;
+  if(S.watches>0)rows+=`<div class="bill-row"><span class="br-lbl">⌚ Watches ×${S.watches}${bd.watchDisc>0?` (${bd.watchDisc} at 50% off)`:''}</span><span class="br-val">$${bd.watchCost.toFixed(2)}</span></div>`;
+  if(protCost>0){
+    const pLabel=S.prot==='account'?'Whole Account Protection':`Protection (${S.protLines} line${S.protLines>1?'s':''})`;
+    rows+=`<div class="bill-row"><span class="br-lbl">🛡️ ${pLabel}</span><span class="br-val">$${protCost.toFixed(2)}</span></div>`;
+  }
+  if(perksCost>0)rows+=`<div class="bill-row"><span class="br-lbl">⭐ Perks ×${S.perkCount} @ $${S.perkTier}</span><span class="br-val">$${perksCost.toFixed(2)}</span></div>`;
+  activeDiscs.forEach(d=>{
+    const s=d.perLine?d.amount*myPlanLines.length:d.amount;
+    rows+=`<div class="bill-row"><span class="br-lbl">${d.name}</span><span class="br-save">−$${s.toFixed(2)}</span></div>`;
+  });
+  rows+=`<div class="bill-row"><span class="br-total-lbl">Monthly Total</span><span class="br-total">$${total.toFixed(2)}</span></div>`;
+  document.getElementById('billRows').innerHTML=rows;
+
+  // Bill section subtitle
+  // ── FLAT-RATE PAYOUT CALC ──
+  const activationLines = myPlanLines.length;
+  const deviceCount = (S.tablets||0) + (S.watches||0);
+  const perkCount   = S.perkTier!=='none' ? (S.perkCount||0) : 0;
+  const perkPayout  = perkCount * (parseFloat(S.perkTier)||0); // 100% of perk charge
+  const protPayout  = S.prot==='line' ? 19*S.protLines : (S.prot==='account' ? 68 : 0); // 100% of prot charge
+
+  // Per-line activation pay: $120 base + $20 bonus if Plus or Ultimate
+  let activationPay = 0;
+  let planBonusPay  = 0;
+  myPlanLines.forEach(ln => {
+    activationPay += SPIFF.activation;
+    if(ln.plan==='plus' || ln.plan==='ultimate') planBonusPay += SPIFF.planBonus;
+  });
+
+  const byodPay    = byodCount * SPIFF.byod;
+  const devicePay  = deviceCount * SPIFF.device;
+  const grandTotal = activationPay + planBonusPay + byodPay + devicePay + perkPayout + protPayout;
+
+  // ── Hero ──
+  document.getElementById('empTotalAmt').textContent = '$' + grandTotal.toFixed(2);
+  const subPieces = [];
+  if(activationLines>0) subPieces.push(activationLines+' line'+(activationLines>1?'s':''));
+  if(byodCount>0)       subPieces.push(byodCount+' BYOD');
+  if(deviceCount>0)     subPieces.push(deviceCount+' device'+(deviceCount>1?'s':''));
+  if(perkPayout+protPayout>0) subPieces.push('perks/prot');
+  document.getElementById('empSub').textContent = subPieces.length ? subPieces.join(' · ') : 'Nothing selected yet';
+
+  // ── Sale Breakdown ──
+  const parts = [];
+  if(activationPay>0)  parts.push('<span style="color:var(--red);font-weight:700">'+activationLines+' new line'+(activationLines>1?'s':'')+'</span> → $'+activationPay.toFixed(0));
+  if(planBonusPay>0)   parts.push('<span style="color:var(--red);font-weight:700">Plus/Ult bonus</span> → +$'+planBonusPay.toFixed(0));
+  if(byodPay>0)        parts.push('<span style="color:var(--orange);font-weight:700">'+byodCount+' BYOD</span> → $'+byodPay.toFixed(0));
+  if(devicePay>0)      parts.push('<span style="color:var(--blue);font-weight:700">'+deviceCount+' device'+(deviceCount>1?'s':'')+'</span> → $'+devicePay.toFixed(0));
+  if(perkPayout>0)     parts.push('<span style="color:var(--gold);font-weight:700">Perks</span> → $'+perkPayout.toFixed(0));
+  if(protPayout>0)     parts.push('<span style="color:var(--purple);font-weight:700">Protection</span> → $'+protPayout.toFixed(0));
+  document.getElementById('saleCountsAs').innerHTML =
+    parts.length ? parts.join('<br>') : '<span style="color:var(--muted)">Nothing selected on Customer tab yet.</span>';
+}
+
+/* ── INIT ── */
+function init(){
+  loadState();
+  document.getElementById('protLinesVal').textContent=S.protLines;
+  document.getElementById('tabletVal').textContent=S.tablets;
+  document.getElementById('watchVal').textContent=S.watches;
+  document.getElementById('perkCountVal').textContent=S.perkCount;
+  initSections();
+  setProt(S.prot);
+  initPerksUI();
+  renderLines();
+  renderDiscounts();
+  recalc();
+}
+
+if(document.readyState!=='loading')init();
+else document.addEventListener('DOMContentLoaded',init);
+</script>
+</body>
+</html>
